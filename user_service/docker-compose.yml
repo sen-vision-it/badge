@@ -1,0 +1,103 @@
+version: '3.9'
+
+services:
+  user_service:
+    build: .
+    container_name: user-service
+    restart: always
+    ports:
+      - "8001:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgres://postgres:P@sser123@postgres:5432/badge_user_db
+    command: gunicorn -w 4 -b 0.0.0.0:8000 config.wsgi:application
+    networks:
+      - app-net
+
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: P@sser123
+      POSTGRES_DB: badge_user_db
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      retries: 5
+    networks:
+      - app-net
+
+  kong-database:
+    image: postgres:13
+    container_name: kong-database
+    restart: always
+    environment:
+      POSTGRES_USER: kong
+      POSTGRES_DB: kong
+      POSTGRES_PASSWORD: kong
+    ports:
+      - "5432:5432"
+    networks:
+      - kong-net
+
+  kong-migrations:
+    image: kong/kong-gateway:3.3
+    container_name: kong-migrations
+    restart: on-failure
+    depends_on:
+      - kong-database
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong
+    command: kong migrations bootstrap
+    networks:
+      - kong-net
+
+  kong:
+    image: kong/kong-gateway:3.3
+    container_name: kong
+    restart: always
+    depends_on:
+      - kong-database
+      - kong-migrations
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+    ports:
+      - "8000:8000"   # Port pour l'API Gateway
+      - "8443:8443"   # Port sécurisé (HTTPS)
+      - "8001:8001"   # Port pour l'Admin API
+      - "8444:8444"   # Port Admin sécurisé (HTTPS)
+    networks:
+      - kong-net
+
+  konga:
+    image: pantsel/konga
+    container_name: konga
+    restart: always
+    depends_on:
+      - kong
+    environment:
+      NODE_ENV: production
+    ports:
+      - "1337:1337"
+    networks:
+      - kong-net
+
+networks:
+  kong-net:
+    driver: bridge
+  app-net:
+    driver: bridge
