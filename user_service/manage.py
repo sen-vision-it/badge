@@ -2,6 +2,8 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+# from users.opentelemetry_setup import setup_tracing
+# setup_tracing()
 
 
 def main():

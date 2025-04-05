@@ -11,9 +11,14 @@ def logout(request):
     Supprime le token Refresh pour empêcher toute nouvelle connexion avec l'ancien token.
     """
     try:
-        refresh_token = request.data["refresh"]
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            return Response({"error": "Un jeton d'actualisation est requis"}, status=status.HTTP_400_BAD_REQUEST)
+
         token = RefreshToken(refresh_token)
         token.blacklist()  # Ajoute le token à la liste noire
+
         return Response({"detail": "Déconnexion réussie."}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+

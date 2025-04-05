@@ -15,7 +15,7 @@ class User(AbstractUser):
         ('user', 'User'),
     ]
     role = models.CharField(max_length=50, choices=ROLE_CHOICES, default='user')
-    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True, unique=True)
     is_verified = models.BooleanField(default=False)  # Vérification email/téléphone
 
     groups = models.ManyToManyField(

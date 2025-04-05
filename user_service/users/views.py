@@ -9,13 +9,12 @@ from rest_framework import status
 from rest_framework.permissions import IsAdminUser
 from rest_framework.decorators import action
 from .permissions import IsAdmin, IsAnalyst
+from rest_framework import generics
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    """
-    Vue API REST pour gérer les utilisateurs.
-    Autorise uniquement les utilisateurs authentifiés via JWT.
-    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
@@ -25,10 +24,15 @@ class UserViewSet(viewsets.ModelViewSet):
         user = self.get_object()
         new_role = request.data.get('role')
         if new_role not in dict(User.ROLE_CHOICES):
-            return Response({"error": "Rôle invalide"}, status=400)
+            return Response({"error": "Rôle invalide"}, status=status.HTTP_400_BAD_REQUEST)
         user.role = new_role
         user.save()
         return Response({"success": f"Rôle changé en {new_role}"})
+
+
+class UserCreateAPIView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
 
 class UserProfileView(APIView):
@@ -63,13 +67,6 @@ class LogoutView(APIView):
 
 class AvailableRolesView(APIView):
     def get(self, request):
-        return Response(dict(User.ROLE_CHOICES))
-
-
-class RoleListView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
         roles = dict(User.ROLE_CHOICES)
         return Response(roles)
 
@@ -86,3 +83,13 @@ class AnalystOnlyView(APIView):
 
     def get(self, request):
         return Response({"msg": f"Bienvenue Analyste {request.user.username}"})
+
+
+class ForbiddenExampleView(APIView):
+    def get(self, request):
+        raise PermissionDenied("Vous n'êtes pas autorisé à accéder à cette ressource.")
+
+
+class NotFoundExampleView(APIView):
+    def get(self, request):
+        raise Http404("Cette ressource n'existe pas.")
