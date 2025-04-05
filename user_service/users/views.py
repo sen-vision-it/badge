@@ -34,8 +34,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @staticmethod
-    def get(request):
+    def get(self, request):
         user = request.user
         return Response({
             'username': user.username,
@@ -47,8 +46,7 @@ class UserProfileView(APIView):
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @staticmethod
-    def post(request):
+    def post(self, request):
         try:
             refresh_token = request.data.get("refresh")
             if not refresh_token:
@@ -64,15 +62,13 @@ class LogoutView(APIView):
 
 
 class AvailableRolesView(APIView):
-    @staticmethod
-    def get(request):
+    def get(self, request):
         return Response(dict(User.ROLE_CHOICES))
 
 
 class RoleListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @staticmethod
     def get(self, request):
         roles = dict(User.ROLE_CHOICES)
         return Response(roles)
@@ -81,7 +77,6 @@ class RoleListView(APIView):
 class AdminOnlyView(APIView):
     permission_classes = [IsAdmin]
 
-    @staticmethod
     def get(self, request):
         return Response({"msg": f"Bienvenue Admin {request.user.username}"})
 
@@ -89,6 +84,5 @@ class AdminOnlyView(APIView):
 class AnalystOnlyView(APIView):
     permission_classes = [IsAnalyst]
 
-    @staticmethod
     def get(self, request):
         return Response({"msg": f"Bienvenue Analyste {request.user.username}"})
